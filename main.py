@@ -1,3 +1,4 @@
+from datetime import datetime
 import random
 import urllib.parse
 import telebot
@@ -6,22 +7,134 @@ from telebot import types
 # Токен вашего бота
 bot = telebot.TeleBot("9174056572:AAEeBf1rTpbkHo1HnM2DNsTcSphIt9f6_84")
 
-# Список команд для справки (без скрытых команд)
-COMMANDS_INFO = """
-🤖 Список доступных команд:
-Используйте префикс **хаб** или **.** (например: `.курс`, `хаб цитата`):
+# Хранилище языков для чатов (по умолчанию русский)
+chat_languages = {}
 
-• **курс** [кол-во] [валюта1] [валюта2] — конвертер валют
+# Словарь локализации (языки: ru, en, uk, de, kz)
+LOCALES = {
+    "ru": {
+        "help": """
+🤖 **Список доступных команд:**
+Используйте префикс **хаб** или **.** (например: `.курс 5 доллар`, `хаб цит`, `.lang en`):
+• **курс** [кол-во] [валюта] — мультиконвертер валют
 • **погода** [город] — узнать погоду
-• **поиск** [запрос] — ссылки в поисковиках (синонимы: гугл, яндекс, найти)
-• **монетка** — подбросить монетку (орёл/решка)
-• **кубик** — бросить игральный кубик (1-6)
-• **цитата** — одна из 50 случайных цитат
+• **поиск** [запрос] — ссылки в поисковиках
+• **монетка** — подбросить монетку
+• **кубик** — бросить игральный кубик
+• **цит** — случайная цитата
+• **переведи** [текст] — перевести текст
 • **раскладка** [текст] — исправить раскладку (синоним: конв)
-• **меню** — показать это сообщение и кнопки
-"""
+• **lang** [ru/en/uk/de/kz] — сменить язык бота
+• **меню** — показать это сообщение
+""",
+        "welcome": "Привет! Я многоязычный бот-помощник.\n",
+        "lang_changed": "✅ Язык успешно изменен на русский!",
+        "weather": "🌤 Погода в местности",
+        "coin_res": "Результат броска",
+        "dice_res": "Вам выпало число",
+        "quote_title": "📜 **Цитата дня:**",
+        "translate_resp": "🔤 Перевод",
+    },
+    "en": {
+        "help": """
+🤖 **Available commands:**
+Use prefix **hub** or **.** (e.g., `.курс 5 usd`, `hub цит`, `.lang ru`):
+• **курс** [amount] [currency] — multi-currency converter
+• **погода** [city] — get weather
+• **поиск** [query] — search engine links
+• **монетка** — flip a coin
+• **кубик** — roll a dice
+• **цит** — random quote
+• **переведи** [text] — translate text
+• **раскладка** [text] — fix keyboard layout (synonym: конв)
+• **lang** [ru/en/uk/de/kz] — change bot language
+• **меню** — show this message
+""",
+        "welcome": "Hello! I am your multilingual assistant bot.\n",
+        "lang_changed": "✅ Language successfully changed to English!",
+        "weather": "🌤 Weather in",
+        "coin_res": "Coin flip result",
+        "dice_res": "You rolled",
+        "quote_title": "📜 **Quote of the day:**",
+        "translate_resp": "🔤 Translation",
+    },
+    "uk": {
+        "help": """
+🤖 **Список доступних команд:**
+Використовуйте префікс **хаб** або **.** (наприклад: `.курс 5 usd`, `хаб цит`):
+• **курс** [кількість] [валюта] — мультиконвертер валют
+• **погода** [місто] — дізнатися погоду
+• **поиск** [запит] — посилання у пошукових системах
+• **монетка** — підкинути монетку
+• **кубик** — кинути гральний кубик
+• **цит** — випадкова цитата
+• **переведи** [текст] — перекласти текст
+• **раскладка** [текст] — виправити розкладку (синонім: конв)
+• **lang** [ru/en/uk/de/kz] — змінити мову бота
+• **меню** — показати це повідомлення
+""",
+        "welcome": "Привіт! Я багатомовний бот-помічник.\n",
+        "lang_changed": "✅ Мову успішно змінено на українську!",
+        "weather": "🌤 Погода в місті",
+        "coin_res": "Результат кидка",
+        "dice_res": "Вам випало число",
+        "quote_title": "📜 **Цитата дня:**",
+        "translate_resp": "🔤 Переклад",
+    },
+    "de": {
+        "help": """
+🤖 **Verfügbare Befehle:**
+Verwenden Sie das Präfix **hub** oder **.** (z. B. `.курс 5 usd`, `hub цит`):
+• **курс** [Menge] [Währung] — Währungsrechner
+• **погода** [Stadt] — Wetter abrufen
+• **поиск** [Suche] — Suchmaschinen-Links
+• **монетка** — Münzwurf
+• **кубик** — Würfeln
+• **цит** — Zitat des Tages
+• **переведи** [Text] — Text übersetzen
+• **раскладка** [Text] — Tastaturlayout korrigieren
+• **lang** [ru/en/uk/de/kz] — Sprache ändern
+• **меню** — Dieses Menü anzeigen
+""",
+        "welcome": "Hallo! Ich bin Ihr mehrsprachiger Assistent.\n",
+        "lang_changed": "✅ Sprache erfolgreich auf Deutsch geändert!",
+        "weather": "🌤 Wetter in",
+        "coin_res": "Münzwurf-Ergebnis",
+        "dice_res": "Gewürfelte Zahl",
+        "quote_title": "📜 **Zitat des Tages:**",
+        "translate_resp": "🔤 Übersetzung",
+    },
+    "kz": {
+        "help": """
+🤖 **Қолжетімді командалар:**
+**хаб** немесе **.** префиксін қолданыңыз (мысалы: `.курс 5 usd`, `хаб цит`):
+• **курс** [мөлшер] [валюта] — валюта конвертері
+• **погода** [қала] — ауа райын білу
+• **поиск** [сұрау] — іздеу жүйелерінің сілтемелері
+• **монетка** — монета лақтыру
+• **кубик** — сүйек лақтыру
+• **цит** — кездейсоқ дәйексөз
+• **переведи** [мәтін] — мәтінді аудару
+• **раскладка** [мәтін] — пернетақта тілін түзету
+• **lang** [ru/en/uk/de/kz] — тілді ауыстыру
+• **меню** — көмек мәзірін көрсету
+""",
+        "welcome": "Сәлем! Мен сіздің көптілді көмекші ботыңызбын.\n",
+        "lang_changed": "✅ Тіл сәтті қазақ тіліне өзгертілді!",
+        "weather": "🌤 Қала бойынша ауа райы",
+        "coin_res": "Монета нәтижесі",
+        "dice_res": "Сізге түскен сан",
+        "quote_title": "📜 **Күн дәйексөзі:**",
+        "translate_resp": "🔤 Аударма",
+    },
+}
 
-# Полный список из 50 цитат
+
+def get_locale(chat_id):
+  lang = chat_languages.get(chat_id, "ru")
+  return LOCALES.get(lang, LOCALES["ru"])
+
+
 QUOTES_LIST = [
     "«Единственный способ делать великую работу — любить то, что вы делаете.» — Стив Джобс",
     "«Будущее принадлежит тем, кто верит в красоту своей мечты.» — Элеонора Рузвельт",
@@ -72,160 +185,231 @@ QUOTES_LIST = [
     "«Мудрость приходит с возрастом, но иногда возраст приходит один.» — Михаил Жванецкий",
     "«Величайшая слава в жизни заключается не в том, чтобы никогда не падать, а в том, чтобы подниматься каждый раз.» — Нельсон Мандела",
     "«Человек создан для счастья, как птица для полета.» — В.Г. Короленко",
-    "«Настоящий успех измеряется не тем, чего вы достигли, а тем, какие препятствия вы преодолели на пути к этому.» — Букер Т. Вашингтон"
+    "«Настоящий успех измеряется не тем, чего вы достигли, а тем, какие препятствия вы преодолели на пути к этому.» — Букер Т. Вашингтон",
 ]
 
-@bot.message_handler(commands=['start', 'help'])
+
+@bot.message_handler(commands=["start", "help"])
 def send_welcome(message):
-    markup = types.InlineKeyboardMarkup()
-    btn_kurs = types.InlineKeyboardButton("💱 Курс", callback_data="btn_kurs")
-    btn_fun = types.InlineKeyboardButton("🎲 Играть", callback_data="btn_fun")
-    btn_quote = types.InlineKeyboardButton("📜 Цитата", callback_data="btn_quote")
-    btn_help = types.InlineKeyboardButton("📋 Список команд", callback_data="btn_help")
-    
-    markup.add(btn_kurs, btn_fun)
-    markup.add(btn_quote, btn_help)
-    
-    bot.send_message(
-        message.chat.id, 
-        "Привет! Я бот-помощник.\n" + COMMANDS_INFO, 
-        reply_markup=markup, 
-        parse_mode="Markdown"
-    )
+  loc = get_locale(message.chat.id)
+  markup = types.InlineKeyboardMarkup()
+  btn_kurs = types.InlineKeyboardButton("💱 Курс", callback_data="btn_kurs")
+  btn_fun = types.InlineKeyboardButton("🎲 Играть", callback_data="btn_fun")
+  btn_quote = types.InlineKeyboardButton("📜 Цитата", callback_data="btn_quote")
+  btn_help = types.InlineKeyboardButton("📋 Меню", callback_data="btn_help")
+
+  markup.add(btn_kurs, btn_fun)
+  markup.add(btn_quote, btn_help)
+
+  bot.send_message(
+      message.chat.id,
+      loc["welcome"] + loc["help"],
+      reply_markup=markup,
+      parse_mode="Markdown",
+  )
+
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_inline(call):
-    if call.data == "btn_kurs":
-        bot.answer_callback_query(call.id)
-        bot.send_message(call.message.chat.id, "💱 Пример команды: `.курс 100 usd rub`", parse_mode="Markdown")
-    elif call.data == "btn_fun":
-        bot.answer_callback_query(call.id)
-        bot.send_message(call.message.chat.id, "🎲 Попробуйте написать `.монетка` или `.кубик`", parse_mode="Markdown")
-    elif call.data == "btn_quote":
-        bot.answer_callback_query(call.id)
-        bot.send_message(call.message.chat.id, f"📜 *Цитата дня:*\n{random.choice(QUOTES_LIST)}", parse_mode="Markdown")
-    elif call.data == "btn_help":
-        bot.answer_callback_query(call.id)
-        bot.send_message(call.message.chat.id, COMMANDS_INFO, parse_mode="Markdown")
+  loc = get_locale(call.message.chat.id)
+  if call.data == "btn_kurs":
+    bot.answer_callback_query(call.id)
+    bot.send_message(
+        call.message.chat.id,
+        "💱 Пример команды: `.курс 5 доллар`",
+        parse_mode="Markdown",
+    )
+  elif call.data == "btn_fun":
+    bot.answer_callback_query(call.id)
+    bot.send_message(
+        call.message.chat.id,
+        "🎲 Попробуйте написать `.монетка` или `.кубик`",
+        parse_mode="Markdown",
+    )
+  elif call.data == "btn_quote":
+    bot.answer_callback_query(call.id)
+    bot.send_message(
+        call.message.chat.id,
+        f"{loc['quote_title']}\n{random.choice(QUOTES_LIST)}",
+        parse_mode="Markdown",
+    )
+  elif call.data == "btn_help":
+    bot.answer_callback_query(call.id)
+    bot.send_message(
+        call.message.chat.id, loc["help"], parse_mode="Markdown"
+    )
 
-@bot.message_handler(content_types=['text'])
+
+@bot.message_handler(content_types=["text"])
 def handle_text(message):
-    raw_text = message.text.strip()
-    text_lower = raw_text.lower()
-    
-    prefix = None
-    command_text = ""
-    
-    if text_lower.startswith("хаб "):
-        prefix = "хаб "
-        command_text = text_lower[4:].strip()
-    elif text_lower.startswith("."):
-        prefix = "."
-        command_text = text_lower[1:].strip()
-        
-    if prefix is None:
-        return
+  raw_text = message.text.strip()
+  text_lower = raw_text.lower()
 
-    parts = command_text.split(maxsplit=1)
-    cmd = parts[0] if parts else ""
-    args = parts[1] if len(parts) > 1 else ""
+  prefix = None
+  command_text = ""
 
-    # Скрытая команда: привет
-    if cmd == "привет":
-        bot.send_message(message.chat.id, "Привет, чем могу помочь?")
+  if text_lower.startswith("хаб "):
+    prefix = "хаб "
+    command_text = text_lower[4:].strip()
+  elif text_lower.startswith("."):
+    prefix = "."
+    command_text = text_lower[1:].strip()
 
-    # Скрытая команда: как дела
-    elif cmd in ["как дела?", "как дела"]:
-        bot.send_message(message.chat.id, "Пока не родила")
+  if prefix is None:
+    return
 
-    # 1. Погода
-    elif cmd == "погода":
-        if args:
-            bot.send_message(message.chat.id, f"🌤 Погода в местности *{args}*: примерно +20°C, без осадков.", parse_mode="Markdown")
-        else:
-            bot.send_message(message.chat.id, "📍 Укажите город или село. Пример: `.погода Москва`", parse_mode="Markdown")
+  parts = command_text.split(maxsplit=1)
+  cmd = parts[0] if parts else ""
+  args = parts[1] if len(parts) > 1 else ""
 
-    # 2. Поиск
-    elif cmd in ["поиск", "гугл", "яндекс", "найти", "найди", "искать"]:
-        if args:
-            encoded = urllib.parse.quote(args)
-            google_url = f"https://www.google.com/search?q={encoded}"
-            yandex_url = f"https://yandex.ru/search/?text={encoded}"
-            text_resp = f"🔍 Результаты поиска для *{args}*:\n\n• [Google]({google_url})\n• [Яндекс]({yandex_url})"
-            bot.send_message(message.chat.id, text_resp, parse_mode="Markdown", disable_web_page_preview=True)
-        else:
-            bot.send_message(message.chat.id, "🔍 Напишите, что искать. Пример: `.найти python`", parse_mode="Markdown")
+  chat_id = message.chat.id
+  loc = get_locale(chat_id)
 
-    # 3. Монетка
-    elif cmd in ["монетка", "орлрешка"]:
-        result = random.choice(["Орел 🪙", "Решка 🪙"])
-        bot.send_message(message.chat.id, f"Результат броска: *{result}*", parse_mode="Markdown")
-
-    # 4. Кубик
-    elif cmd in ["кубик", "кость"]:
-        result = random.randint(1, 6)
-        bot.send_message(message.chat.id, f"🎲 Вам выпало число: *{result}*", parse_mode="Markdown")
-
-    # 5. Цитата
-    elif cmd == "цитата":
-        bot.send_message(message.chat.id, f"📜 *Цитата дня:*\n{random.choice(QUOTES_LIST)}", parse_mode="Markdown")
-
-    # 6. Исправление раскладки
-    elif cmd in ["раскладка", "конв"]:
-        target_text = args
-        if not target_text and message.reply_to_message and message.reply_to_message.text:
-            target_text = message.reply_to_message.text
-            
-        if target_text:
-            en_chars = "qwertyuiop[]asdfghjkl;'zxcvbnm,./QWERTYUIOP{}ASDFGHJKL:\"ZXCVBNM<>?"
-            ru_chars = "йцукенгшщзхъфывапролджэячсмитьбю.ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ,"
-            trans_table = str.maketrans(en_chars + ru_chars, ru_chars + en_chars)
-            fixed_text = target_text.translate(trans_table)
-            bot.send_message(message.chat.id, f"🔤 Исправленный текст:\n{fixed_text}")
-        else:
-            bot.send_message(message.chat.id, "🔤 Укажите текст или ответьте командой `.раскладка` на сообщение.")
-
-    # 7. Курс валют
-    elif cmd in ["курс", "пары"]:
-        clean_args = args.replace("/", " ").replace(" в ", " ").replace(" на ", " ")
-        parts_args = clean_args.split()
-        
-        amount = 1.0
-        base = "USD"
-        quote = "RUB"
-        
-        try:
-            if len(parts_args) >= 3:
-                amount = float(parts_args[0])
-                base = parts_args[1].upper()
-                quote = parts_args[2].upper()
-            elif len(parts_args) == 2:
-                try:
-                    amount = float(parts_args[0])
-                    base = "USD"
-                    quote = parts_args[1].upper()
-                except ValueError:
-                    base = parts_args[0].upper()
-                    quote = parts_args[1].upper()
-            elif len(parts_args) == 1 and parts_args[0]:
-                base = parts_args[0].upper()
-                quote = "RUB"
-        except ValueError:
-            pass
-
-        rates = {"USD": 90.0, "EUR": 98.0, "USDT": 91.0, "BTC": 60000.0, "RUB": 1.0}
-        
-        if base in rates and quote in rates:
-            in_rub = amount * rates[base] if base != "RUB" else amount
-            result_val = in_rub / rates[quote] if quote != "RUB" else in_rub
-            bot.send_message(message.chat.id, f"💱 {amount} {base} = *{result_val:.2f} {quote}*", parse_mode="Markdown")
-        else:
-            bot.send_message(message.chat.id, f"💱 Курс пары {base} / {quote}: (пример: 1 {base} = 90.0 {quote})")
-
-    elif cmd in ["меню", "команды"]:
-        send_welcome(message)
-        
+  # Смена языка: .lang en / ru / uk / de / kz
+  if cmd == "lang":
+    if args in LOCALES:
+      chat_languages[chat_id] = args
+      new_loc = get_locale(chat_id)
+      bot.send_message(chat_id, new_loc["lang_changed"])
     else:
-        bot.send_message(message.chat.id, f"❌ Неизвестная команда: `{cmd}`. Напишите `.меню` для справки.", parse_mode="Markdown")
+      bot.send_message(
+          chat_id,
+          "🌐 Доступные языки / Available languages: `ru`, `en`, `uk`, `de`,"
+          " `kz`\nПример: `.lang en`",
+          parse_mode="Markdown",
+      )
+    return
+
+  # Скрытая команда: привет
+  if cmd == "привет":
+    bot.send_message(chat_id, "Привет, чем могу помочь?")
+
+  # Скрытая команда: как дела
+  elif cmd in ["как дела?", "как дела"]:
+    bot.send_message(chat_id, "Пока не родила")
+
+  # Погода
+  elif cmd == "погода":
+    if args:
+      bot.send_message(
+          chat_id,
+          f"🌤 {loc['weather']} *{args}*: примерно +20°C, без осадков.",
+          parse_mode="Markdown",
+      )
+    else:
+      bot.send_message(chat_id, "📍 Укажите город. Пример: `.погода Москва`")
+
+  # Поиск
+  elif cmd in ["поиск", "гугл", "яндекс", "найти", "найди", "искать"]:
+    if args:
+      encoded = urllib.parse.quote(args)
+      google_url = f"https://www.google.com/search?q={encoded}"
+      yandex_url = f"https://yandex.ru/search/?text={encoded}"
+      text_resp = (
+          f"🔍 Результаты поиска для *{args}*:\n\n•"
+          f" [Google]({google_url})\n• [Яндекс]({yandex_url})"
+      )
+      bot.send_message(
+          chat_id,
+          text_resp,
+          parse_mode="Markdown",
+          disable_web_page_preview=True,
+      )
+    else:
+      bot.send_message(chat_id, "🔍 Напишите, что искать. Пример: `.найти python`")
+
+  # Переводчик: .переведи {текст}
+  elif cmd == "переведи":
+    if args:
+      bot.send_message(
+          chat_id,
+          f"🔤 *Перевод:* {args} (эмулировано / обработано)",
+          parse_mode="Markdown",
+      )
+    else:
+      bot.send_message(
+          chat_id, "🔤 Укажите текст для перевода. Пример: `.переведи Hello`"
+      )
+
+  # Монетка
+  elif cmd in ["монетка", "орлрешка"]:
+    result = random.choice(["Орел 🪙", "Решка 🪙"])
+    bot.send_message(
+        chat_id, f"{loc['coin_res']}: *{result}*", parse_mode="Markdown"
+    )
+
+  # Кубик
+  elif cmd in ["кубик", "кость"]:
+    result = random.randint(1, 6)
+    bot.send_message(
+        chat_id, f"{loc['dice_res']}: *{result}*", parse_mode="Markdown"
+    )
+
+  # Цитата (.цит)
+  elif cmd == "цит":
+    bot.send_message(
+        chat_id,
+        f"{loc['quote_title']}\n{random.choice(QUOTES_LIST)}",
+        parse_mode="Markdown",
+    )
+
+  # Раскладка
+  elif cmd in ["раскладка", "конв"]:
+    target_text = args
+    if (
+        not target_text
+        and message.reply_to_message
+        and message.reply_to_message.text
+    ):
+      target_text = message.reply_to_message.text
+
+    if target_text:
+      en_chars = (
+          "qwertyuiop[]asdfghjkl;'zxcvbnm,./QWERTYUIOP{}ASDFGHJKL:\"ZXCVBNM<>?"
+      )
+      ru_chars = (
+          "йцукенгшщзхъфывапролджэячсмитьбю.ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ,"
+      )
+      trans_table = str.maketrans(en_chars + ru_chars, ru_chars + en_chars)
+      fixed_text = target_text.translate(trans_table)
+      bot.send_message(chat_id, f"🔤 Исправленный текст:\n{fixed_text}")
+    else:
+      bot.send_message(chat_id, "🔤 Укажите текст или ответьте на сообщение.")
+
+  # Курс валют
+  elif cmd in ["курс", "пары"]:
+    parts_args = args.split()
+    amount = 5.0
+    try:
+      if parts_args:
+        amount = float(parts_args[0])
+    except ValueError:
+      amount = 5.0
+
+    eur = amount * 0.89726
+    rub = amount * 81.99524
+    uah = amount * 45.29700
+    byn = amount * 2.99452
+    kzt = amount * 450.12100
+    gem = amount * 0.90910
+
+    current_time = datetime.now().strftime("%d.%m.%Y %H:%M")
+
+    response_text = (
+        f"💹 {amount:g} Доллар США:\n\n"
+        f"🇪🇺 {eur:.4f}\n"
+        f"🇷🇺 {rub:.4f}\n"
+        f"🇺🇦 {uah:.4f}\n"
+        f"🇧🇾 {byn:.4f}\n"
+        f"🇰🇿 {kzt:,.4f}".replace(",", " ")
+        + f"\n💎 {gem:.4f}\n\n"
+        f"⏱️ {current_time}"
+    )
+
+    bot.send_message(chat_id, response_text, parse_mode="Markdown")
+
+  elif cmd in ["меню", "команды"]:
+    send_welcome(message)
+
 
 bot.polling(none_stop=True)
